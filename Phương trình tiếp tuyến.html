@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Đồ thị f(x) và tiếp tuyến tại M</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.1/math.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(120deg,#e3f0ff 0%, #f9f9f9 100%);
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 750px;
+      margin: 32px auto 0 auto;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 8px 32px #1976d233, 0 1.5px 10px #0001;
+      padding: 32px 28px 32px 28px;
+      position: relative;
+      animation: fadeIn 1s;
+      overflow: hidden;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(40px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 2.1rem;
+      font-weight: bold;
+      color: #1769aa;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 11px #bbe8ffb0, 0 1.5px 10px #fff5;
+      position: relative;
+      z-index: 2;
+    }
+    .controls {
+      background: linear-gradient(90deg,#e3f2fd 70%, #fff 100%);
+      padding: 16px 18px 12px 18px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px #1976d22a;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 22px;
+      font-size: 1.07rem;
+    }
+    .controls label {
+      font-weight: 500;
+      color: #1769aa;
+      margin-right: 3px;
+    }
+    .controls input[type="text"], 
+    .controls input[type="number"] {
+      padding: 8px 12px;
+      border-radius: 7px;
+      border: 1.5px solid #90caf9;
+      font-size: 1.07rem;
+      outline: none;
+      background: #f8fafd;
+      transition: border 0.2s;
+      margin-right: 6px;
+      min-width: 75px;
+    }
+    .controls input[type="text"]:focus, 
+    .controls input[type="number"]:focus {
+      border: 1.7px solid #1976d2;
+      background: #e3f2fd;
+    }
+    .controls button {
+      padding: 8px 15px;
+      border-radius: 7px;
+      border: none;
+      font-size: 1.07rem;
+      font-weight: 600;
+      background: linear-gradient(90deg, #1976d2 60%, #42a5f5 100%);
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.18s, transform 0.12s;
+      margin-right: 1px;
+      box-shadow: 0 1.5px 7px #1976d222;
+    }
+    .controls button:hover, .controls button:focus {
+      background: linear-gradient(90deg, #1769aa 60%, #1565c0 100%);
+      transform: translateY(-2px) scale(1.04);
+    }
+    #plot {
+      background-color: #fcfdff;
+      border-radius: 13px;
+      box-shadow: 0 3px 19px #1976d222;
+      padding: 6px 3px 12px 3px;
+      margin-top: 2px;
+      width: 100%; 
+      height: 538px;
+      min-height: 320px;
+      transition: box-shadow 0.18s;
+    }
+    #plot:focus-within, #plot:active {
+      box-shadow: 0 6px 30px #1976d255, 0 2px 8px #0001;
+    }
+    #tangentEquation, #derivativeText {
+      margin-top: 18px;
+      font-size: 1.16rem;
+      border-radius: 8px;
+      padding: 11px 17px;
+      background: linear-gradient(90deg,#fffde7 80%,#e3f2fd 100%);
+      color: #1976d2;
+      box-shadow: 0 1.5px 8px #1976d21a;
+      display: inline-block;
+      min-width: 210px;
+      max-width: 100%;
+      word-break: break-word;
+      text-align: center;
+    }
+    #tangentEquation {
+      font-style: italic;
+      font-weight: 500;
+      background: linear-gradient(90deg,#e1bee7 80%,#fff 100%);
+      color: #7b1fa2;
+      margin-right: 12px;
+    }
+    #derivativeText {
+      font-weight: bold;
+      margin-top: 8px;
+      background: linear-gradient(90deg,#e3f2fd 80%,#fff 100%);
+      color: #1769aa;
+    }
+    /* Responsive */
+    @media (max-width: 900px) {
+      .container { max-width: 99vw; padding: 3vw 2vw;}
+      #plot { height: 55vw; min-height: 240px;}
+    }
+    @media (max-width: 700px) {
+      .container { padding: 2vw 1vw;}
+      h2 { font-size: 1.22rem; }
+      .controls { font-size: 0.97rem; gap: 10px 7px;}
+      #tangentEquation, #derivativeText { font-size: 1.01rem; padding: 9px 6px;}
+    }
+    @media (max-width: 480px) {
+      .container { margin: 1vw; }
+      #plot { height: 210px; min-height: 120px;}
+      .controls { flex-direction: column; align-items: stretch;}
+      h2 { font-size: 1.04rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>
+      <span style="color:#1976d2;">Đạo hàm</span> – 
+      <span style="color:#43a047;">Hệ số góc</span> – 
+      <span style="color:#ff4081;">Tiếp tuyến tại M</span>
+    </h2>
+    <div class="controls">
+      <label>Nhập hàm f(x): </label>
+      <input type="text" id="functionInput" value="x^2">
+      <label>Hoành độ điểm M:</label>
+      <input type="number" id="xValue" value="-8" step="0.1" onkeydown="if(event.key==='Enter') draw()">
+      <button onclick="startAnimation()"><i class="fa-solid fa-play"></i> Chạy M</button>
+      <button onclick="stopAnimation()"><i class="fa-solid fa-pause"></i> Dừng</button>
+      <button onclick="draw()"><i class="fa-solid fa-rotate"></i> Vẽ lại</button>
+      <button onclick="toggleIntersection()"><i class="fa-solid fa-xmark"></i> Giao điểm với trục Ox</button>
+      <button onclick="toggleAspectRatio()"><i class="fa-solid fa-expand"></i> Tỷ lệ 1:1</button>
+      <button onclick="toggleDerivative()"><i class="fa-solid fa-d"></i> Đạo hàm</button>
+      <button onclick="toggleTangentEquation()"><i class="fa-solid fa-lines-leaning"></i> PT tiếp tuyến</button>
+    </div>
+    <div id="plot"></div>
+    <div id="tangentEquation" style="display: none;"></div>
+    <div id="derivativeText" style="display: none;"></div>
+  </div>
+  <!-- Font Awesome CDN for icons (optional but makes UI more modern) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+  <script>
+    let animationInterval = null;
+    let isAspectRatioFixed = false;
+    let showDerivativeValue = false;
+    let showTangentEquation = false;
+    function toggleTangentEquation() {
+      showTangentEquation = !showTangentEquation;
+      draw();
+    }
+    function toggleAspectRatio() {
+      isAspectRatioFixed = !isAspectRatioFixed;
+      draw();
+    }
+    let showIntersection = false;
+    function fFactory(expr) {
+      return (x) => math.evaluate(expr, {x});
+    }
+    function derivative(f, x) {
+      const h = 1e-5;
+      return (f(x + h) - f(x - h)) / (2 * h);
+    }
+    function toggleIntersection() {
+      showIntersection = !showIntersection;
+      draw();
+    }
+    function draw() {
+      const expr = document.getElementById("functionInput").value;
+      const xM = parseFloat(document.getElementById("xValue").value);
+      drawPlot(expr, xM);
+    }
+    function drawPlot(expr, xM) {
+      const f = fFactory(expr);
+      const slope = derivative(f, xM);
+      const yM = f(xM);
+      const x_vals = [], y_vals = [];
+      for (let x = -10; x <= 10; x += 0.1) {
+        x_vals.push(x);
+        y_vals.push(f(x));
+      }
+      let tangent_x, tangent_y, annotations = [];
+      if (showIntersection) {
+        const x_intersect = xM - yM / slope;
+        const range = [Math.min(xM, x_intersect) - 1, Math.max(xM, x_intersect) + 1];
+        tangent_x = range;
+        tangent_y = tangent_x.map(x => slope * (x - xM) + yM);
+        const angleRad = Math.atan(slope);
+        const angleDeg = (Math.atan(slope) * 180 / Math.PI);
+        const adjustedAngleDeg = angleDeg >= 0 ? angleDeg : 180 + angleDeg;
+        const finalAngle = adjustedAngleDeg.toFixed(2);
+        annotations.push({
+          x: x_intersect,
+          y: 0,
+          text: `Góc: ${finalAngle}°`,
+          showarrow: true,
+          arrowhead: 2,
+          ax: -40,
+          ay: -40,
+          bgcolor: 'white',
+          font: {color: '#e53935', size: 14, family: 'Roboto'}
+        });
+      } else {
+        tangent_x = [xM - 2, xM + 2];
+        tangent_y = tangent_x.map(x => slope * (x - xM) + yM);
+      }
+      annotations.push({
+        x: xM,
+        y: yM,
+        xanchor: 'left',
+        yanchor: 'bottom',
+        text: 'Hệ số góc: ' + slope.toFixed(4),
+        showarrow: false,
+        font: { size: 15, color: '#1769aa', family: 'Roboto' },
+        bgcolor: 'rgba(255,255,255,0.88)',
+        bordercolor: '#1976d2',
+        borderwidth: 1.2,
+        borderpad: 4,
+        opacity: 0.92,
+      });
+      const data = [
+        {
+          x: x_vals,
+          y: y_vals,
+          type: 'scatter',
+          mode: 'lines',
+          name: 'f(x)',
+          line: { width: 2.4, color: '#1769aa' }
+        },
+        {
+          x: [xM],
+          y: [yM],
+          type: 'scatter',
+          mode: 'markers',
+          name: 'Điểm M',
+          marker: { size: 13, color: '#ff4081', symbol: 'circle-open-dot', line: {width: 2, color: '#fff'} }
+        },
+        {
+          x: tangent_x,
+          y: tangent_y,
+          type: 'scatter',
+          mode: 'lines',
+          name: 'Tiếp tuyến tại M',
+          line: { dash: 'dot', width: 2.5, color: '#43a047' }
+        }
+      ];
+      if (showIntersection) {
+        const x_intersect = xM - yM / slope;
+        data.push({
+          x: [x_intersect],
+          y: [0],
+          type: 'scatter',
+          mode: 'markers',
+          name: 'Giao điểm với trục Ox',
+          marker: { size: 12, color: '#e53935', symbol: 'x-thin-open' }
+        });
+      }
+      const layout = {
+        margin: { t: 18, l: 52, r: 24, b: 46 },
+        xaxis: {
+          title: { text: "x", font: { family: 'Roboto', size: 15, color: '#1769aa' } },
+          range: isAspectRatioFixed ? [-10, 10] : undefined,
+          zeroline: true,
+          zerolinecolor: "#90caf9",
+          showgrid: true,
+          gridcolor: "#e3f2fd"
+        },
+        yaxis: {
+          title: { text: "f(x)", font: { family: 'Roboto', size: 15, color: '#1769aa' } },
+          scaleanchor: isAspectRatioFixed ? "x" : null,
+          range: isAspectRatioFixed ? [-10, 10] : undefined,
+          zeroline: true,
+          zerolinecolor: "#90caf9",
+          showgrid: true,
+          gridcolor: "#e3f2fd"
+        },
+        dragmode: 'closest',
+        annotations: annotations,
+        legend: {
+          orientation: "h",
+          y: -0.14,
+          font: { size: 13, family: 'Roboto', color: '#1769aa' }
+        },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)'
+      };
+      Plotly.newPlot('plot', data, layout, {displayModeBar: false}).then(() => {
+        const derivativeElement = document.getElementById("derivativeText");
+        if (showDerivativeValue) {
+          const derivativeText = `f'(${xM.toFixed(2)}) = ${slope.toFixed(4)}`;
+          if (derivativeElement) {
+            derivativeElement.textContent = derivativeText;
+            derivativeElement.style.display = 'inline-block';
+          }
+        } else {
+          if (derivativeElement) derivativeElement.style.display = 'none';
+        }
+        const tangentElement = document.getElementById("tangentEquation");
+        if (showTangentEquation) {
+          const b = yM - slope * xM;
+          const equation = `y = <b>${slope.toFixed(4)}</b>x ${b >= 0 ? '+ ' + b.toFixed(4) : '- ' + Math.abs(b).toFixed(4)}`;
+          if (tangentElement) {
+            tangentElement.innerHTML = 'Phương trình tiếp tuyến: ' + equation;
+            tangentElement.style.display = 'inline-block';
+          }
+        } else {
+          if (tangentElement) tangentElement.style.display = 'none';
+        }
+        if (isAspectRatioFixed) {
+          Plotly.relayout('plot', {
+            'xaxis.scaleanchor': null,
+            'yaxis.scaleanchor': null
+          });
+        }
+        const plot = document.getElementById('plot');
+        plot.on('plotly_click', function(data) {
+          const newX = data.points[0].x;
+          document.getElementById("xValue").value = newX.toFixed(2);
+          drawPlot(expr, newX);
+        });
+      });
+    }
+    function startAnimation() {
+      const expr = document.getElementById("functionInput").value;
+      let xM = parseFloat(document.getElementById("xValue").value);
+      clearInterval(animationInterval);
+      animationInterval = setInterval(() => {
+        drawPlot(expr, xM);
+        document.getElementById("xValue").value = xM.toFixed(2);
+        xM += 0.1;
+        if (xM > 10) stopAnimation();
+      }, 100);
+    }
+    function stopAnimation() {
+      clearInterval(animationInterval);
+    }
+    function toggleDerivative() {
+      showDerivativeValue = !showDerivativeValue;
+      draw();
+    }
+    draw();
+  </script>
+</body>
+</html>
